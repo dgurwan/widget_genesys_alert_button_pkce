@@ -17,14 +17,16 @@
             gap: 8px;
             flex-wrap: wrap;
             align-items: center;
+            margin-top: 12px;
         }
 
         .btn {
-            padding: 10px 14px;
+            padding: 5px 5px;
             border-radius: 10px;
             border: 1px solid #ccc;
             background: #fff;
             cursor: pointer;
+            color: white;
         }
 
         #callBtn {
@@ -71,32 +73,18 @@
 
         #loginBtn {
             background: #1f8101;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 14px 18px;
-            font-size: 16px;
-            cursor: pointer;
+            padding: 10px 5px;
         }
 
         #logoutBtn {
             background: #c70202;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 14px 18px;
-            font-size: 16px;
-            cursor: pointer;
+            padding: 10px 5px;
         }
 
         #meBtn {
             background: #0073e6;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 14px 18px;
-            font-size: 16px;
-            cursor: pointer;
+            padding: 10px 5px;
+
         }
 
 
@@ -135,7 +123,7 @@
         1. The app automatically should redirect to login if not authenticated.<br>
         2. After login, your user info is automatically displayed.<br>
         3. Confirm the phone number is pre-filled.<br>
-        4. Click <strong>Call</strong> to create an outbound call.<br>
+        4. Click <strong>SOS</strong> to create an outbound call.<br>
         5. Click <strong>Logout</strong> to reset the session.
     </div>
 
@@ -144,21 +132,24 @@
         <div id="statusText">Logged out</div>
     </div>
 
+    <div style="margin-top:12px">
+        <input id="phoneInput" type="text" placeholder="+33123456789" />
+    </div>
+
+    <div style="margin-top:12px">
+        <button id="callBtn">SOS</button>
+    </div>
+
     <div class="row">
         <button class="btn" id="loginBtn">Login</button>
         <button class="btn" id="meBtn">Who am I?</button>
         <button class="btn" id="logoutBtn">Logout</button>
     </div>
 
-    <div style="margin-top:12px">
-        <input id="phoneInput" type="text" placeholder="+33123456789" />
-    </div>
-
-    <div style="margin-top:12px">
-        <button id="callBtn">Call</button>
-    </div>
-
     <div id="status"></div>
+
+
+
 
     <script>
         const loginBtn = document.getElementById("loginBtn");
