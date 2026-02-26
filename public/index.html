@@ -232,7 +232,11 @@
             setStatus(`HTTP ${resp.status}\n` + JSON.stringify(data, null, 2));
 
             if (resp.status === 401) {
+                setIndicator("logged-out");
                 clearToken();
+                setStatus("Session expired. Redirecting to login...");
+                login();
+
             } else if (resp.ok) {
                 setIndicator("logged-in");
                 callBtn.disabled = false; // enable call button when logged in

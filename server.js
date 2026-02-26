@@ -178,6 +178,10 @@ app.post("/auth/logout", (req, res) => {
  */
 app.get("/api/me", async (req, res) => {
   try {
+    console.log(
+      "Authorization header:",
+      req.headers.authorization ? "present" : "missing",
+    );
     const token = getBearerToken(req);
     if (!token)
       return res.status(401).json({ ok: false, message: "Not logged in" });
@@ -185,13 +189,14 @@ app.get("/api/me", async (req, res) => {
     client.setAccessToken(token);
     const usersApi = new platformClient.UsersApi();
     const me = await usersApi.getUsersMe();
-    res.json({ ok: true, me });
+    return res.json({ ok: true, me });
   } catch (e) {
-    res.status(e?.status || 500).json({
+    const status = e?.status || e?.response?.status || 500;
+    return res.status(status).json({
       ok: false,
-      status: e?.status,
-      message: e?.message,
-      body: e?.body,
+      message: e?.message || "Genesys API error",
+      status,
+      body: e?.body || e?.response?.data,
     });
   }
 });
@@ -201,6 +206,10 @@ app.get("/api/me", async (req, res) => {
  */
 app.post("/api/call", async (req, res) => {
   try {
+    console.log(
+      "Authorization header:",
+      req.headers.authorization ? "present" : "missing",
+    );
     const token = getBearerToken(req);
     if (!token)
       return res.status(401).json({ ok: false, message: "Not logged in" });
