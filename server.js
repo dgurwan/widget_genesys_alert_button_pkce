@@ -167,7 +167,7 @@ app.get("/oauth/callback", async (req, res) => {
 });
 
 /**
- * 3) Logout: nothing server-side to clear in this variant, but keep endpoint for UI
+ * 3) Logout: nothing server-side to clear, but could be used to clear server-side session if that were used instead of localStorage
  */
 app.post("/auth/logout", (req, res) => {
   res.json({ ok: true });

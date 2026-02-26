@@ -38,6 +38,9 @@
         }
 
         #callBtn:disabled,
+        #loginBtn:disabled,
+        #logoutBtn:disabled,
+        #meBtn:disabled,
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -199,6 +202,7 @@
 
             callBtn.disabled = true;  // disable call button when logged out
             loginBtn.disabled = false;   //  enable login again
+            logoutBtn.disabled = true;   //  disable logout button when logged out
             setIndicator("logged-out");
         }
 
@@ -313,6 +317,7 @@
         window.addEventListener("load", async () => {
             callBtn.disabled = true;
             loginBtn.disabled = false;
+            logoutBtn.disabled = true;
 
             setIndicator("processing");
             await loadConfig();
@@ -321,8 +326,12 @@
 
             if (!accessToken) {
                 setIndicator("logged-out");
+                setStatus("Not authenticated. Redirecting to login...");
+                login(); // trigger login automatically
                 return;
             }
+
+            logoutBtn.disabled = false;
 
             await whoAmI();
         });
