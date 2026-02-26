@@ -4,26 +4,19 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Genesys PKCE Call Button</title>
+    <title>Genesys Alert Button</title>
+
     <style>
         body {
             font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-            padding: 40px;
+            padding: 20px;
         }
 
-        #callBtn {
-            background: #d40000;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 18px 26px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        #callBtn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn {
@@ -32,86 +25,186 @@
             border: 1px solid #ccc;
             background: #fff;
             cursor: pointer;
-            margin-right: 8px;
+        }
+
+        #callBtn {
+            background: #d40000;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #callBtn:disabled,
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background: #949393;
         }
 
         #status {
-            margin-top: 18px;
+            margin-top: 15px;
             white-space: pre-wrap;
+            background: #f6f6f6;
+            padding: 10px;
+            border-radius: 8px;
         }
 
-        #top {
-            margin-bottom: 18px;
+        input {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            width: 260px;
+        }
+
+        .instructions {
+            background: #eef3ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        #loginBtn {
+            background: #1f8101;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #logoutBtn {
+            background: #c70202;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #meBtn {
+            background: #0073e6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .status-logged-out {
+            background-color: #d40000;
+        }
+
+        .status-processing {
+            background-color: #ff9800;
+        }
+
+        .status-logged-in {
+            background-color: #2e7d32;
         }
     </style>
 </head>
 
 <body>
-    <div style="font-size: small;">
-        <h1>Comment tester ?</h1>
-        <p>
-            Etape 1 : Se connecter à Genesys Cloud via le bouton "Login with Genesys Cloud (PKCE)".<br>
-            Etape 2 (facultatif): Cliquer sur "Who am I?" pour vérifier que la connexion a réussi et pour voir les
-            détails de votre
-            compte.<br>
-            Etape 3 (facultatif): Modifier le numéro si besoins<br>
-            Etape 4 : Cliquer sur le bouton rouge "SOS" pour déclencher une action d'appel d'urgence vers le numéro et
-            voir la réponse de l'API.
-        </p>
+
+    <div class="instructions">
+        <strong>How to test:</strong><br><br>
+        1. The app automatically should redirect to login if not authenticated.<br>
+        2. After login, your user info is automatically displayed.<br>
+        3. Confirm the phone number is pre-filled.<br>
+        4. Click <strong>Call</strong> to create an outbound call.<br>
+        5. Click <strong>Logout</strong> to reset the session.
     </div>
 
-    <div id="top">
-        <button class="btn" id="loginBtn">Connexion</button>
-        <button class="btn" id="meBtn">Infos</button>
+    <div class="status-indicator">
+        <div id="statusDot" class="status-dot status-logged-out"></div>
+        <div id="statusText">Logged out</div>
     </div>
 
-    <button id="callBtn">SOS</button>
-    <input type="text" id="phoneInput" placeholder="numéro SOS" />
+    <div class="row">
+        <button class="btn" id="loginBtn">Login</button>
+        <button class="btn" id="meBtn">Who am I?</button>
+        <button class="btn" id="logoutBtn">Logout</button>
+    </div>
+
+    <div style="margin-top:12px">
+        <input id="phoneInput" type="text" placeholder="+33123456789" />
+    </div>
+
+    <div style="margin-top:12px">
+        <button id="callBtn">Call</button>
+    </div>
+
     <div id="status"></div>
 
     <script>
         const loginBtn = document.getElementById("loginBtn");
         const meBtn = document.getElementById("meBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
         const callBtn = document.getElementById("callBtn");
         const status = document.getElementById("status");
         const phoneInput = document.getElementById("phoneInput");
+        const statusDot = document.getElementById("statusDot");
+        const statusText = document.getElementById("statusText");
 
         let accessToken = null;
-        let defaultCallNumber = null;
 
         function setStatus(msg) { status.textContent = msg; }
 
-        async function loadConfig() {
-            const resp = await fetch("/config");
-            if (!resp.ok) throw new Error("Failed to load /config");
-            return resp.json();
-        }
-
-        async function init() {
-            try {
-                const cfg = await loadConfig();
-                phoneInput.value = cfg.callNumber || "";
-            } catch (e) {
-                setStatus("Failed to load config: " + e.message);
+        function setIndicator(state) {
+            statusDot.className = "status-dot";
+            if (state === "logged-in") {
+                statusDot.classList.add("status-logged-in");
+                statusText.textContent = "Logged in";
+            } else if (state === "processing") {
+                statusDot.classList.add("status-processing");
+                statusText.textContent = "Processing";
+            } else {
+                statusDot.classList.add("status-logged-out");
+                statusText.textContent = "Logged out";
             }
         }
 
-
-        function loadTokenFromStorage() {
+        function loadToken() {
             try {
-                const raw = window.localStorage.getItem("gcAccessToken");
-                if (!raw) return;
-                const obj = JSON.parse(raw);
-                accessToken = obj.access_token || null;
-                if (accessToken) setStatus("Token loaded from storage.");
-            } catch (e) { }
+                const raw = localStorage.getItem("gcAccessToken");
+                if (!raw) return null;
+                return JSON.parse(raw)?.access_token || null;
+            } catch { return null; }
+        }
+
+        function clearToken() {
+            localStorage.removeItem("gcAccessToken");
+            accessToken = null;
+
+            callBtn.disabled = true;  // disable call button when logged out
+            loginBtn.disabled = false;   //  enable login again
+            setIndicator("logged-out");
         }
 
         async function callApi(url, opts = {}) {
-            if (!opts.headers) opts.headers = {};
-            if (accessToken) {
-                opts.headers["Authorization"] = "Bearer " + accessToken;
-            }
+            opts.headers = opts.headers || {};
+            if (accessToken) opts.headers["Authorization"] = "Bearer " + accessToken;
 
             const resp = await fetch(url, opts);
             const text = await resp.text();
@@ -120,23 +213,65 @@
             return { resp, data };
         }
 
-        loginBtn.addEventListener("click", () => {
-            window.location.href = "/auth/start";
-        });
+        async function loadConfig() {
+            try {
+                const resp = await fetch("/config");
+                if (!resp.ok) return;
+                const cfg = await resp.json();
+                if (cfg?.callNumber) phoneInput.value = cfg.callNumber;
+            } catch { }
+        }
 
-        meBtn.addEventListener("click", async () => {
+        async function whoAmI() {
+            if (!accessToken) {
+                setIndicator("logged-out");
+                callBtn.disabled = true;
+                loginBtn.disabled = false;
+                setStatus("Not authenticated.");
+                return;
+            }
+
+            setIndicator("processing");
+
             const { resp, data } = await callApi("/api/me");
             setStatus(`HTTP ${resp.status}\n` + JSON.stringify(data, null, 2));
-        });
 
-        callBtn.addEventListener("click", async () => {
+            if (resp.status === 401) {
+                clearToken();
+            } else if (resp.ok) {
+                setIndicator("logged-in");
+                callBtn.disabled = false; // enable call button when logged in
+                loginBtn.disabled = true;   // disable login when logged in
+            }
+        }
+
+        function login() {
+            setIndicator("processing");
+            window.location.href = "/auth/start";
+        }
+
+        async function logout() {
+            await fetch("/auth/logout", { method: "POST" }).catch(() => { });
+            clearToken();
+            setStatus("Logged out.");
+        }
+
+
+        async function placeCall() {
+            if (!accessToken) {
+                setStatus("You are not authenticated. Please login first.");
+                setIndicator("logged-out");
+                return;
+            }
+
             callBtn.disabled = true;
+            setIndicator("processing");
 
             const phoneNumber = phoneInput.value.trim();
-
             if (!phoneNumber) {
                 setStatus("Please enter a phone number.");
                 callBtn.disabled = false;
+                setIndicator("logged-in");
                 return;
             }
 
@@ -150,15 +285,48 @@
                 });
 
                 setStatus(`HTTP ${resp.status}\n` + JSON.stringify(data, null, 2));
+
+                if (resp.status === 401) {
+                    setIndicator("logged-out");
+                    clearToken();
+                } else if (resp.ok) {
+                    setIndicator("logged-in");
+                } else {
+                    setIndicator("logged-in"); // still authenticated, but call failed
+                }
+
+            } catch (e) {
+                setStatus("Call error: " + (e.message || e));
+                setIndicator("logged-out");
             } finally {
                 callBtn.disabled = false;
             }
+        }
+
+        /* Buttons */
+        loginBtn.addEventListener("click", login);
+        meBtn.addEventListener("click", whoAmI);
+        logoutBtn.addEventListener("click", logout);
+        callBtn.addEventListener("click", placeCall);
+
+        /* Auto login + auto WhoAmI */
+        window.addEventListener("load", async () => {
+            callBtn.disabled = true;
+            loginBtn.disabled = false;
+
+            setIndicator("processing");
+            await loadConfig();
+
+            accessToken = loadToken();
+
+            if (!accessToken) {
+                setIndicator("logged-out");
+                return;
+            }
+
+            await whoAmI();
         });
-
-        loadTokenFromStorage();
-        init();
     </script>
-
 
 </body>
 
