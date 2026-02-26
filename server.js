@@ -1,4 +1,5 @@
 // server.js
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -6,7 +7,8 @@ const crypto = require("crypto");
 const fetch = require("node-fetch");
 const platformClient = require("purecloud-platform-client-v2");
 
-const config = require("./config");
+const config = require("./public/config");
+
 const app = express();
 
 app.use(express.json());
@@ -203,18 +205,20 @@ app.post("/api/call", async (req, res) => {
     if (!token)
       return res.status(401).json({ ok: false, message: "Not logged in" });
 
+    const phoneNumber = req.body.phoneNumber;
+    if (!phoneNumber)
+      return res
+        .status(400)
+        .json({ ok: false, message: "phoneNumber required" });
+
     client.setAccessToken(token);
     const conversationsApi = new platformClient.ConversationsApi();
 
-    const createBody = { phoneNumber: config.callNumber };
-    const result = await conversationsApi.postConversationsCalls(createBody);
-
-    res.json({
-      ok: true,
-      dialed: config.callNumber,
-      conversationId: result?.id,
-      conversation: result,
+    const result = await conversationsApi.postConversationsCalls({
+      phoneNumber,
     });
+
+    res.json({ ok: true, conversationId: result.id, raw: result });
   } catch (e) {
     res.status(e?.status || 500).json({
       ok: false,
@@ -226,6 +230,12 @@ app.post("/api/call", async (req, res) => {
   }
 });
 
+/** Helpers */
+app.get("/config", (req, res) => {
+  res.json({
+    callNumber: process.env.CALL_NUMBER || "",
+  });
+});
 app.get("/health", (req, res) => res.json({ ok: true, region: config.region }));
 
 app.listen(config.port, () => {

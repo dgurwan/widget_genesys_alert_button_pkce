@@ -47,12 +47,26 @@
 </head>
 
 <body>
+    <div style="font-size: small;">
+        <h1>Comment tester ?</h1>
+        <p>
+            Etape 1 : Se connecter à Genesys Cloud via le bouton "Login with Genesys Cloud (PKCE)".<br>
+            Etape 2 (facultatif): Cliquer sur "Who am I?" pour vérifier que la connexion a réussi et pour voir les
+            détails de votre
+            compte.<br>
+            Etape 3 (facultatif): Modifier le numéro si besoins<br>
+            Etape 4 : Cliquer sur le bouton rouge "SOS" pour déclencher une action d'appel d'urgence vers le numéro et
+            voir la réponse de l'API.
+        </p>
+    </div>
+
     <div id="top">
-        <button class="btn" id="loginBtn">Login with Genesys Cloud (PKCE)</button>
-        <button class="btn" id="meBtn">Who am I?</button>
+        <button class="btn" id="loginBtn">Connexion</button>
+        <button class="btn" id="meBtn">Infos</button>
     </div>
 
     <button id="callBtn">SOS</button>
+    <input type="text" id="phoneInput" placeholder="numéro SOS" />
     <div id="status"></div>
 
     <script>
@@ -60,10 +74,28 @@
         const meBtn = document.getElementById("meBtn");
         const callBtn = document.getElementById("callBtn");
         const status = document.getElementById("status");
+        const phoneInput = document.getElementById("phoneInput");
 
         let accessToken = null;
+        let defaultCallNumber = null;
 
         function setStatus(msg) { status.textContent = msg; }
+
+        async function loadConfig() {
+            const resp = await fetch("/config");
+            if (!resp.ok) throw new Error("Failed to load /config");
+            return resp.json();
+        }
+
+        async function init() {
+            try {
+                const cfg = await loadConfig();
+                phoneInput.value = cfg.callNumber || "";
+            } catch (e) {
+                setStatus("Failed to load config: " + e.message);
+            }
+        }
+
 
         function loadTokenFromStorage() {
             try {
@@ -72,14 +104,14 @@
                 const obj = JSON.parse(raw);
                 accessToken = obj.access_token || null;
                 if (accessToken) setStatus("Token loaded from storage.");
-            } catch (e) {
-                // ignore
-            }
+            } catch (e) { }
         }
 
         async function callApi(url, opts = {}) {
             if (!opts.headers) opts.headers = {};
-            if (accessToken) opts.headers["Authorization"] = "Bearer " + accessToken;
+            if (accessToken) {
+                opts.headers["Authorization"] = "Bearer " + accessToken;
+            }
 
             const resp = await fetch(url, opts);
             const text = await resp.text();
@@ -89,7 +121,6 @@
         }
 
         loginBtn.addEventListener("click", () => {
-            // full redirect inside iframe
             window.location.href = "/auth/start";
         });
 
@@ -100,18 +131,35 @@
 
         callBtn.addEventListener("click", async () => {
             callBtn.disabled = true;
-            setStatus("Calling...");
+
+            const phoneNumber = phoneInput.value.trim();
+
+            if (!phoneNumber) {
+                setStatus("Please enter a phone number.");
+                callBtn.disabled = false;
+                return;
+            }
+
+            setStatus("Calling " + phoneNumber + "...");
+
             try {
-                const { resp, data } = await callApi("/api/call", { method: "POST" });
+                const { resp, data } = await callApi("/api/call", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phoneNumber })
+                });
+
                 setStatus(`HTTP ${resp.status}\n` + JSON.stringify(data, null, 2));
             } finally {
                 callBtn.disabled = false;
             }
         });
 
-        // On load, try to restore token
         loadTokenFromStorage();
+        init();
     </script>
+
+
 </body>
 
 </html>
