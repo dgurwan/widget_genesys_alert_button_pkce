@@ -118,7 +118,10 @@
 
 <body>
 
-    <div class="instructions">
+    <div style="display: flex; right: 10px; position: absolute; top: 10px;">
+        <button id="helpBtn">i</button>
+    </div>
+    <div class="instructions" id="instructions">
         <strong>How to test:</strong><br><br>
         1. The app automatically should redirect to login if not authenticated.<br>
         2. After login, your user info is automatically displayed.<br>
@@ -127,7 +130,7 @@
         5. Click <strong>Logout</strong> to reset the session.
     </div>
 
-    <div class="status-indicator">
+    <div class="status-indicator" id="status-indicator">
         <div id="statusDot" class="status-dot status-logged-out"></div>
         <div id="statusText">Logged out</div>
     </div>
@@ -160,8 +163,37 @@
         const phoneInput = document.getElementById("phoneInput");
         const statusDot = document.getElementById("statusDot");
         const statusText = document.getElementById("statusText");
+        const helpBtn = document.getElementById("helpBtn");
+        const statusIndicator = document.getElementById("status-indicator");
+        const instructions = document.getElementById("instructions");
 
         let accessToken = null;
+        let debugMode = false;
+
+        function debug() {
+            if (!debugMode) {
+                status.style.display = "none";
+                instructions.style.display = "none";
+                statusIndicator.style.display = "none";
+                phoneInput.style.display = "none";
+                loginBtn.style.display = "none";
+                meBtn.style.display = "none";
+                logoutBtn.style.display = "none";
+
+
+
+            } else {
+                status.style.display = "inline-block";
+                instructions.style.display = "inline-block";
+                statusIndicator.style.display = "inline-block";
+                phoneInput.style.display = "inline-block";
+                loginBtn.style.display = "inline-block";
+                meBtn.style.display = "inline-block";
+                logoutBtn.style.display = "inline-block";
+
+            }
+            debugMode = !debugMode;
+        }
 
         function setStatus(msg) { status.textContent = msg; }
 
@@ -307,12 +339,15 @@
         meBtn.addEventListener("click", whoAmI);
         logoutBtn.addEventListener("click", logout);
         callBtn.addEventListener("click", placeCall);
+        helpBtn.addEventListener("click", debug);
 
         /* Auto login + auto WhoAmI */
         window.addEventListener("load", async () => {
+            debug(); // start in debug mode with status visible
             callBtn.disabled = true;
             loginBtn.disabled = false;
             logoutBtn.disabled = true;
+
 
             setIndicator("processing");
             await loadConfig();
